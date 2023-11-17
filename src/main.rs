@@ -1,22 +1,20 @@
 use std::path::Path;
+use clap::Parser;
 use tokio::net::UnixListener;
 use k8s_csi_xetfs::node::XetHubCSIDriver;
-use once_cell::sync::Lazy;
 use tokio_stream::wrappers::UnixListenerStream;
 use tonic::transport::Server;
-use k8s_csi_xetfs::constants::*;
+use k8s_csi_xetfs::args::DriverArgs;
 use k8s_csi_xetfs::identity::IdentityService;
 use k8s_csi_xetfs::error::K8sCSIXetFSError;
 
-static UNIX_SOCKET_PATH: Lazy<String> = Lazy::new(|| {
-    std::env::var(UNIX_SOCKET_PATH_CSI_ENV_VAR).unwrap_or_default()
-});
-
 #[tokio::main]
 async fn main() -> Result<(), K8sCSIXetFSError> {
-    let node_id = String::from("TODO");
+    let DriverArgs {
+        node_id, endpoint
+    } = DriverArgs::parse();
 
-    let listener = UnixListener::bind(Path::new(UNIX_SOCKET_PATH.as_str()))?;
+    let listener = UnixListener::bind(Path::new(endpoint.as_str()))?;
     let stream = UnixListenerStream::new(listener);
 
 

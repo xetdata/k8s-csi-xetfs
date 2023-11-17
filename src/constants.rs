@@ -1,5 +1,3 @@
-pub const UNIX_SOCKET_PATH_CSI_ENV_VAR: &str = "CSI_ENDPOINT";
-
 pub const PLUGIN_NAME: &str = "xethub.xetdata.com";
 
 pub const CAPABILITY_STAGE_UNSTAGE_VOLUME: &str = "STAGE_UNSTAGE_VOLUME";

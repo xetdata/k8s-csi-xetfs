@@ -2,6 +2,7 @@ pub mod node;
 pub mod constants;
 pub mod identity;
 pub mod error;
+pub mod args;
 
 pub mod proto {
     pub mod csi {

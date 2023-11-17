@@ -2,7 +2,7 @@ use veil::Redact;
 use tonic::Status;
 use crate::proto::csi::v1::NodePublishVolumeRequest;
 
-#[derive(Redact)]
+#[derive(Redact, Eq, PartialEq)]
 pub(crate) struct XetCSIVolume {
     pub(crate) volume_id: String,
     pub(crate) path: String,

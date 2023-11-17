@@ -61,7 +61,13 @@ impl Node for XetHubCSIDriver {
         let volume_spec: XetCSIVolume = request.into_inner().try_into()?;
 
         let mut volumes = self.volumes.lock().await;
-        if volumes.contains_key(&volume_spec.volume_id) {
+        let volume = volumes.get(&volume_spec.volume_id);
+        if let Some(volume) = volume {
+            if volume_spec == *volume {
+                // repeat request, already published
+                return Ok(Response::new(NodePublishVolumeResponse {}));
+            }
+            // incompatible
             return Err(Status::already_exists("volume already exists"));
         }
         if let Err(e) = mount(&volume_spec).await {

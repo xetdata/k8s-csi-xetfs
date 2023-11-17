@@ -15,8 +15,8 @@ impl Identity for IdentityService {
         _request: Request<GetPluginInfoRequest>,
     ) -> Result<Response<GetPluginInfoResponse>, Status> {
         let get_plugin_info_response = GetPluginInfoResponse {
-            name: PLUGIN_NAME.to_string(),
-            vendor_version: env!("CARGO_PKG_VERSION").to_string(),
+            name: PLUGIN_NAME.to_owned(),
+            vendor_version: env!("CARGO_PKG_VERSION").to_owned(),
             ..Default::default()
         };
 

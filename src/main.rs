@@ -1,6 +1,6 @@
 use std::path::Path;
 use tokio::net::UnixListener;
-use k8s_csi_xetfs::node::XetHubCSIService;
+use k8s_csi_xetfs::node::XetHubCSIDriver;
 use once_cell::sync::Lazy;
 use tokio_stream::wrappers::UnixListenerStream;
 use tonic::transport::Server;
@@ -14,14 +14,14 @@ static UNIX_SOCKET_PATH: Lazy<String> = Lazy::new(|| {
 
 #[tokio::main]
 async fn main() -> Result<(), K8sCSIXetFSError> {
-    XetHubCSIService::new();
+    let node_id = String::from("TODO");
 
     let listener = UnixListener::bind(Path::new(UNIX_SOCKET_PATH.as_str()))?;
     let stream = UnixListenerStream::new(listener);
 
-    let xethub_service = XetHubCSIService::new();
 
-    let node_server = k8s_csi_xetfs::proto::csi::v1::node_server::NodeServer::new(xethub_service);
+    let driver = XetHubCSIDriver::new(node_id);
+    let node_server = k8s_csi_xetfs::proto::csi::v1::node_server::NodeServer::new(driver);
     let identity_server = k8s_csi_xetfs::proto::csi::v1::identity_server::IdentityServer::new(IdentityService);
 
     Server::builder()

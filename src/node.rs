@@ -10,6 +10,7 @@ use crate::proto::csi::v1::{
 use std::collections::HashMap;
 use tokio::sync::Mutex;
 use tonic::{async_trait, Request, Response, Status};
+use tracing::warn;
 use volume::XetCSIVolume;
 use crate::node::mount::{mount, unmount};
 
@@ -93,8 +94,7 @@ impl Node for XetHubCSIDriver {
             return Err(Status::not_found(format!("volume with volume id {volume_id} not found")));
         };
         if volume.path != path {
-            // TODO: use tracing::warn
-            eprintln!("WARN: paths don't match request {path} got {}", volume.path);
+            warn!("paths don't match request {path} got {}", volume.path);
         }
         if let Err(e) = unmount(volume.path.clone()).await {
             return Err(Status::internal(e));

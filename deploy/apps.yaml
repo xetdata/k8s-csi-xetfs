@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app1
+spec:
+  containers:
+    - name: app1
+      image: busybox
+      command: ["sleep", "1000000"]
+      volumeMounts:
+        - name: xet-flickr-30
+          mountPath: /data
+  volumes:
+    - name: xet-flickr-30
+      csi:
+        driver: csi.xethub.xetdata.com
+        readOnly: true
+        volumeAttributes:
+          repo: https://xethub.com/XetHub/Flickr30k.git
+          commit: main

@@ -1,0 +1,119 @@
+---
+# Node Service
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: xet-csi-node
+  labels:
+    app.kubernetes.io/name: xet-csi-driver
+spec:
+  selector:
+    matchLabels:
+      app: xet-csi-node
+      app.kubernetes.io/name: xet-csi-driver
+      app.kubernetes.io/instance: kustomize
+  template:
+    metadata:
+      labels:
+        app: xet-csi-node
+        app.kubernetes.io/name: xet-csi-driver
+        app.kubernetes.io/instance: kustomize
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirst
+      serviceAccountName: xet-csi-node-sa
+      priorityClassName: system-node-critical
+      # apply to all pods within namespace
+      tolerations:
+        - operator: Exists 
+      securityContext:
+        fsGroup: 0
+        runAsGroup: 0
+        runAsNonRoot: false
+        runAsUser: 0
+      containers:
+        - name: xet-plugin
+          securityContext:
+            privileged: true
+          image: xet-csi-plugin:latest
+          imagePullPolicy: Never
+          args:
+            - --endpoint=$(CSI_ENDPOINT)
+            - --node-id=$(KUBE_NODE_NAME)
+          env:
+            - name: CSI_ENDPOINT
+              value: /csi/csi.sock
+              #value: unix:/csi/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: kubelet-dir
+              mountPath: /var/lib/kubelet
+              mountPropagation: "Bidirectional"
+            - name: plugin-dir
+              mountPath: /csi
+          ports:
+            - name: healthz
+              containerPort: 9809
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 2
+            failureThreshold: 5
+            
+        - name: node-driver-registrar
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.0
+          args:
+            - --csi-address=$(ADDRESS)
+            - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
+            - --v=2
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: DRIVER_REG_SOCK_PATH
+              value: /var/lib/kubelet/plugins/csi.xethub.xetdata.com/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+          securityContext:
+            privileged: true
+            
+        - name: liveness-probe
+          image: registry.k8s.io/sig-storage/livenessprobe:v2.11.0
+          args:
+            - --csi-address=/csi/csi.sock
+            - --health-port=9809
+            - --v=2
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            
+      volumes:
+        - name: kubelet-dir
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi.xethub.xetdata.com/
+            type: DirectoryOrCreate
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry/
+            type: Directory
+

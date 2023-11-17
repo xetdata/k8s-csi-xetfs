@@ -10,7 +10,7 @@ use crate::proto::csi::v1::{
 use std::collections::HashMap;
 use tokio::sync::Mutex;
 use tonic::{async_trait, Request, Response, Status};
-use tracing::warn;
+use tracing::{info, warn};
 use volume::XetCSIVolume;
 use crate::node::mount::{mount, unmount};
 
@@ -59,6 +59,7 @@ impl Node for XetHubCSIDriver {
         &self,
         request: Request<NodePublishVolumeRequest>,
     ) -> Result<Response<NodePublishVolumeResponse>, Status> {
+        info!("got pub request: {request:?}");
         let volume_spec: XetCSIVolume = request.into_inner().try_into()?;
 
         let mut volumes = self.volumes.lock().await;
@@ -72,6 +73,7 @@ impl Node for XetHubCSIDriver {
             return Err(Status::already_exists("volume already exists"));
         }
         if let Err(e) = mount(&volume_spec).await {
+            warn!("error in mount: {e:?}");
             return Err(Status::internal(e));
         }
         volumes.insert(volume_spec.volume_id.clone(), volume_spec);

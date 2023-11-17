@@ -10,57 +10,11 @@ use crate::proto::csi::v1::{
 use std::collections::HashMap;
 use tokio::sync::Mutex;
 use tonic::{async_trait, Request, Response, Status};
-use veil::Redact;
+use volume::XetCSIVolume;
 use crate::node::mount::{mount, unmount};
 
 mod mount;
-
-#[derive(Redact)]
-struct XetCSIVolume {
-    volume_id: String,
-    path: String,
-    repo: String,
-    commit: String,
-    // don't log following
-    #[redact]
-    user: String,
-    #[redact]
-    pat: String,
-}
-
-const VOLUME_CONTEXT_REPO_KEY: &str = "repo";
-const VOLUME_CONTEXT_COMMIT_KEY: &str = "commit";
-const SECRETS_USER_KEY: &str = "user";
-const SECRETS_PAT_KEY: &str = "pat";
-
-impl TryFrom<NodePublishVolumeRequest> for XetCSIVolume {
-    type Error = Status;
-
-    fn try_from(mut value: NodePublishVolumeRequest) -> Result<Self, Self::Error> {
-        let repo = if let Some(repo) = value.volume_context.remove(VOLUME_CONTEXT_REPO_KEY) {
-            repo
-        } else {
-            return Err(Status::invalid_argument("missing repo in volume context"));
-        };
-        let commit = if let Some(commit) = value.volume_context.remove(VOLUME_CONTEXT_COMMIT_KEY) {
-            commit
-        } else {
-            return Err(Status::invalid_argument("missing commit in volume context"));
-        };
-        // user and pat are optional
-        let user = value.secrets.remove(SECRETS_USER_KEY).unwrap_or_default();
-        let pat = value.secrets.remove(SECRETS_PAT_KEY).unwrap_or_default();
-
-        Ok(XetCSIVolume {
-            volume_id: value.volume_id,
-            path: value.target_path,
-            repo,
-            commit,
-            user,
-            pat,
-        })
-    }
-}
+mod volume;
 
 #[derive(Debug, Default)]
 pub struct XetHubCSIDriver {
@@ -110,7 +64,7 @@ impl Node for XetHubCSIDriver {
         if volumes.contains_key(&volume_spec.volume_id) {
             return Err(Status::already_exists("volume already exists"));
         }
-        if let Err(e) = mount(&volume_spec) {
+        if let Err(e) = mount(&volume_spec).await {
             return Err(Status::internal(e));
         }
         volumes.insert(volume_spec.volume_id.clone(), volume_spec);
@@ -126,7 +80,6 @@ impl Node for XetHubCSIDriver {
         let path = inner.target_path;
         let volume_id = inner.volume_id;
 
-        
         let mut volumes = self.volumes.lock().await;
         let volume = if let Some(volume) = volumes.get(volume_id.as_str()) {
             volume
@@ -137,7 +90,7 @@ impl Node for XetHubCSIDriver {
             // TODO: use tracing::warn
             eprintln!("WARN: paths don't match request {path} got {}", volume.path);
         }
-        if let Err(e) = unmount(volume.path.clone()) {
+        if let Err(e) = unmount(volume.path.clone()).await {
             return Err(Status::internal(e));
         }
         let _ = volumes.remove(volume_id.as_str());

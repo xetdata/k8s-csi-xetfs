@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use gitxetcore::command::mount::{mount_command, MountArgs};
 use gitxetcore::config::{ConfigGitPathOption, XetConfig};
 use tokio::process::Command;
+use tracing::error;
 use crate::error::K8sCSIXetFSError;
 use crate::error::K8sCSIXetFSError::GenericError;
 use crate::node::volume::XetCSIVolume;
@@ -30,7 +31,7 @@ pub(crate) async fn mount(volume_spec: &XetCSIVolume) -> Result<(), K8sCSIXetFSE
         .map_err(|e| GenericError(e.to_string()))?;
     let args = mount_args(volume_spec);
     if let Err(e) = mount_command(&xet_config, &args).await {
-        eprintln!("mount command failed: {e}");
+        error!("mount command failed: {e}");
         return Err(GenericError(e.to_string()));
     }
     Ok(())

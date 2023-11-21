@@ -17,8 +17,10 @@ async fn main() -> Result<(), K8sCSIXetFSError> {
     let DriverArgs {
         node_id, endpoint
     } = DriverArgs::parse();
-    info!("node id: {node_id} endpoint: {endpoint}");
+    info!("starting driver with node id: {node_id} endpoint: {endpoint}");
 
+    // remove socket file if present, ignore error if DNE
+    let _ = std::fs::remove_file(endpoint.as_str());
     let listener = UnixListener::bind(Path::new(endpoint.as_str()))?;
     let stream = UnixListenerStream::new(listener);
 
@@ -26,6 +28,7 @@ async fn main() -> Result<(), K8sCSIXetFSError> {
     let node_server = k8s_csi_xetfs::proto::csi::v1::node_server::NodeServer::new(driver);
     let identity_server = k8s_csi_xetfs::proto::csi::v1::identity_server::IdentityServer::new(IdentityService);
 
+    info!("starting service");
     Server::builder()
         .add_service(node_server)
         .add_service(identity_server)

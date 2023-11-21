@@ -13,10 +13,9 @@ tokio-stream = { version = "0.1.14", features = ["net"] }
 tonic = { version = "0.10.2", features = ["tls", "tls-roots", "transport"] }
 thiserror = "1.0.50"
 veil = "0.1.6"
-gitxetcore = { git = "https://github.com/xetdata/xet-core" }
 clap = { version = "4.4.8", features = ["derive"] }
 tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 
 [build-dependencies]
 tonic-build = "0.10.2"

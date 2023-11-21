@@ -1,39 +1,37 @@
-use std::path::PathBuf;
-use gitxetcore::command::mount::{mount_command, MountArgs};
-use gitxetcore::config::{ConfigGitPathOption, XetConfig};
-use tokio::process::Command;
-use tracing::error;
 use crate::error::K8sCSIXetFSError;
 use crate::error::K8sCSIXetFSError::GenericError;
 use crate::node::volume::XetCSIVolume;
+use tokio::process::Command;
+use tracing::{error, info};
 
-const LOCAL_IP: &str = "127.0.0.1";
-
-/// returns a MountArgs with reasonable default values and values populated from the volume spec.
-fn mount_args(volume_spec: &XetCSIVolume) -> MountArgs {
-    MountArgs {
-        remote: volume_spec.repo.clone(),
-        path: Some(PathBuf::from(&volume_spec.path)),
-        reference: volume_spec.commit.clone(),
-        foreground: false,
-        prefetch: 16,
-        ip: LOCAL_IP.to_owned(),
-        clonepath: None,
-        writable: false,
-        watch: None,
-        invoked_from_python: None,
-    }
-}
+const GIT_XET_BIN: &str = "git-xet";
+const GIT_XET_MOUNT_SUBCOMMAND: &str = "mount";
+const GIT_XET_MOUNT_REF_FLAG: &str = "-r";
+const GIT_XET_ENV_VAR_USER_NAME: &str = "XET_USER_NAME";
+const GIT_XET_ENV_VAR_USER_TOKEN: &str = "XET_USER_TOKEN";
 
 pub(crate) async fn mount(volume_spec: &XetCSIVolume) -> Result<(), K8sCSIXetFSError> {
-    // TODO: update xet-core with better ways of initializing/configuring these values.
-    let xet_config = XetConfig::new(None, None, ConfigGitPathOption::NoPath)
-        .map_err(|e| GenericError(e.to_string()))?;
-    let args = mount_args(volume_spec);
-    if let Err(e) = mount_command(&xet_config, &args).await {
-        error!("mount command failed: {e}");
-        return Err(GenericError(e.to_string()));
+    let mut cmd = Command::new(GIT_XET_BIN);
+    let args = [
+        GIT_XET_MOUNT_SUBCOMMAND,
+        GIT_XET_MOUNT_REF_FLAG,
+        volume_spec.commit.as_str(),
+        volume_spec.repo.as_str(),
+        volume_spec.path.as_str(),
+    ];
+    info!("mount, running {GIT_XET_BIN} with args: {args:?}");
+    cmd.args(args);
+    if !volume_spec.user.is_empty() && !volume_spec.pat.is_empty() {
+        info!("setting user name and token env vars in mount command");
+        cmd.envs([
+            ("XET_LOG_LEVEL", "info"),
+            (GIT_XET_ENV_VAR_USER_NAME, volume_spec.user.as_str()),
+            (GIT_XET_ENV_VAR_USER_TOKEN, volume_spec.pat.as_str()),
+        ]);
     }
+
+    cmd.spawn()?.wait().await?;
+
     Ok(())
 }
 
@@ -44,7 +42,10 @@ pub(crate) async fn unmount(path: String) -> Result<(), K8sCSIXetFSError> {
     cmd.arg(path);
     let exit_status = cmd.spawn()?.wait().await?;
     if !exit_status.success() {
-        return Err(GenericError(format!("umount existed with status code: {exit_status}")))
+        error!("umount failed {exit_status}");
+        return Err(GenericError(format!(
+            "umount existed with status code: {exit_status}"
+        )));
     }
     Ok(())
 }

@@ -19,3 +19,15 @@ spec:
         volumeAttributes:
           repo: https://xethub.com/XetHub/Flickr30k.git
           commit: main
+    # following is setup for a private repo mount
+    # requires a secret configured like in secret.yaml.template
+    #- name: private-repo
+      #csi:
+        #driver: csi.xethub.xetdata.com
+        #readOnly: true
+        #volumeAttributes:
+          #repo: <https url of private repo>
+          #commit: main
+        #nodePublishSecretRef:
+          #name: <secret name>
+

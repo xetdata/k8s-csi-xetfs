@@ -11,6 +11,8 @@ build-plugin: build-rust
 
 run: build-plugin
 	minikube image load xet-csi-plugin:latest
+	# uncomment following if you have a secret to use
+	#kubectl apply -f deploy/.secret.yaml
 	kubectl apply -f deploy/csidriver.yaml
 	kubectl apply -f deploy/node-serviceaccount.yaml
 	kubectl apply -f deploy/node-daemonset.yaml

@@ -3,8 +3,9 @@ use crate::proto::csi::v1::{
     GetPluginCapabilitiesRequest, GetPluginCapabilitiesResponse,
     GetPluginInfoRequest, GetPluginInfoResponse, ProbeRequest, ProbeResponse,
 };
-use tonic::{async_trait, Request, Response, Status};
 use crate::constants::PLUGIN_NAME;
+use tonic::{async_trait, Request, Response, Status};
+use tracing::info;
 
 pub struct IdentityService;
 
@@ -14,6 +15,7 @@ impl Identity for IdentityService {
         &self,
         _request: Request<GetPluginInfoRequest>,
     ) -> Result<Response<GetPluginInfoResponse>, Status> {
+        info!("GetPluginInfo");
         let get_plugin_info_response = GetPluginInfoResponse {
             name: PLUGIN_NAME.to_owned(),
             vendor_version: env!("CARGO_PKG_VERSION").to_owned(),
@@ -27,6 +29,7 @@ impl Identity for IdentityService {
         &self,
         _request: Request<GetPluginCapabilitiesRequest>,
     ) -> Result<Response<GetPluginCapabilitiesResponse>, Status> {
+        info!("GetPluginCapabilities");
         let get_plugin_capabilities_response = GetPluginCapabilitiesResponse {
             capabilities: vec![],
         };
@@ -38,6 +41,7 @@ impl Identity for IdentityService {
         &self,
         _request: Request<ProbeRequest>,
     ) -> Result<Response<ProbeResponse>, Status> {
+        info!("Probe");
         Ok(Response::new(Default::default()))
     }
 }

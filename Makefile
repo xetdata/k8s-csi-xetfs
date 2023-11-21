@@ -8,9 +8,12 @@ build-rust: rust
 build-plugin: build-rust
 	docker build -f deploy/Dockerfile -t xet-csi-plugin:latest .
 
+build-counter-app: deploy/app.py deploy/Dockerfile.app
+	docker build -f deploy/Dockerfile.app -t counter-app:latest deploy/
 
-run: build-plugin
+run: build-plugin build-counter-app
 	minikube image load xet-csi-plugin:latest
+	minikube image load counter-app:latest
 	# uncomment following if you have a secret to use
 	#kubectl apply -f deploy/.secret.yaml
 	kubectl apply -f deploy/csidriver.yaml

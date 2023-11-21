@@ -43,7 +43,6 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: /csi/csi.sock
-              #value: unix:/csi/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:

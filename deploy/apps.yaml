@@ -6,8 +6,8 @@ metadata:
 spec:
   containers:
     - name: app1
-      image: busybox
-      command: ["sleep", "1000000"]
+      image: counter-app:latest
+      imagePullPolicy: Never
       volumeMounts:
         - name: xet-flickr-30
           mountPath: /data

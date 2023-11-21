@@ -1,4 +1,3 @@
-// TODO: get from params
 pub const PLUGIN_NAME: &str = "csi.xethub.xetdata.com";
 
 pub const CAPABILITY_STAGE_UNSTAGE_VOLUME: &str = "STAGE_UNSTAGE_VOLUME";

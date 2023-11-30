@@ -1,0 +1,27 @@
+# This docker image provides a way to build the binaries needed for
+# Xet services. Instead of baking the dependencies and caches into
+# the image, we leverage the host system's build cache to store the
+# intermediate artifacts using a volume for Cargo's target directory.
+FROM rust:1.72
+
+
+RUN USER=root rustup component add rustfmt
+# install protobuf dependency for compiling the plugin
+RUN apt update && apt upgrade -y
+RUN apt install -y protobuf-compiler libprotobuf-dev
+
+# Source location within the container for the source files to be mounted.
+ENV SRC_DIR=/opt/xethub/rust
+# Target location within the container for the build artifacts / cache to be mounted.
+ENV CARGO_TARGET_DIR=/opt/rust-target
+# Cargo's home directory (cargo index is located here)
+ENV REGISTRY=/usr/local/cargo/registry
+
+
+RUN mkdir -p $SRC_DIR
+VOLUME $SRC_DIR $CARGO_TARGET_DIR $REGISTRY
+WORKDIR $SRC_DIR
+
+COPY ./build.sh /usr/local/bin/build.sh
+
+CMD ["/usr/local/bin/build.sh"]

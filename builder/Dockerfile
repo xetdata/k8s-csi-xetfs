@@ -9,8 +9,8 @@ RUN apt update && \
 RUN git config --global user.email "operations+k8s@xethub.com"  && \
     git config --global user.name "xet"
 
-COPY ./rust/target/release/git-xet /usr/local/bin/git-xet
-COPY ./rust/target/release/k8s-csi-xetfs k8s-csi-xetfs
+COPY ./rust_target/release/git-xet /usr/local/bin/git-xet
+COPY ./rust_target/release/k8s-csi-xetfs k8s-csi-xetfs
 
 ENV HOME=/home
 

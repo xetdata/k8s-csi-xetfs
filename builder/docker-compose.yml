@@ -1,0 +1,14 @@
+version: "3.9"
+services: 
+  rust_build:
+    image: rust_build
+    build:
+      context: .
+      dockerfile: Dockerfile.rust
+    volumes:
+      - ../rust:/opt/xethub/rust
+      - $HOME/.ssh:/root/.ssh
+      - ./rust_target:/opt/rust-target
+      - ./cargo_cache:/usr/local/cargo/registry
+    environment:
+      - RELEASE_FLAG=--release

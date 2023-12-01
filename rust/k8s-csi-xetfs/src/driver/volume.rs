@@ -2,7 +2,7 @@ use veil::Redact;
 use tonic::Status;
 use crate::proto::csi::v1::NodePublishVolumeRequest;
 
-#[derive(Redact, Eq, PartialEq)]
+#[derive(Clone, Default, Redact, Eq, PartialEq)]
 pub(crate) struct XetCSIVolume {
     pub(crate) volume_id: String,
     pub(crate) path: String,
@@ -19,6 +19,12 @@ const VOLUME_CONTEXT_REPO_KEY: &str = "repo";
 const VOLUME_CONTEXT_COMMIT_KEY: &str = "commit";
 const SECRETS_USER_KEY: &str = "user";
 const SECRETS_PAT_KEY: &str = "pat";
+
+impl XetCSIVolume {
+    pub(crate) fn validate(&self) -> bool {
+        !self.path.is_empty() && !self.volume_id.is_empty() && !self.commit.is_empty() && !self.repo.is_empty()
+    }
+}
 
 impl TryFrom<NodePublishVolumeRequest> for XetCSIVolume {
     type Error = Status;

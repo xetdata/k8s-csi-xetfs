@@ -16,6 +16,8 @@ veil = "0.1.6"
 clap = { version = "4.4.8", features = ["derive"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
+async-trait = "0.1.74"
+mockall = "0.11.4"
 
 [build-dependencies]
 tonic-build = "0.10.2"

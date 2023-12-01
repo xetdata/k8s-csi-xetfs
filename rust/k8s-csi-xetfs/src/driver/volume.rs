@@ -1,6 +1,6 @@
 use veil::Redact;
 use tonic::Status;
-use crate::proto::csi::v1::{ControllerPublishVolumeRequest, NodePublishVolumeRequest};
+use crate::proto::csi::v1::NodePublishVolumeRequest;
 
 #[derive(Clone, Default, Redact, Eq, PartialEq)]
 pub(crate) struct XetCSIVolume {
@@ -47,35 +47,6 @@ impl TryFrom<NodePublishVolumeRequest> for XetCSIVolume {
         Ok(XetCSIVolume {
             volume_id: value.volume_id,
             path: value.target_path,
-            repo,
-            commit,
-            user,
-            pat,
-        })
-    }
-}
-
-impl TryFrom<ControllerPublishVolumeRequest> for XetCSIVolume {
-    type Error = Status;
-
-    fn try_from(mut value: ControllerPublishVolumeRequest) -> Result<Self, Self::Error> {
-        let repo = if let Some(repo) = value.volume_context.remove(VOLUME_CONTEXT_REPO_KEY) {
-            repo
-        } else {
-            return Err(Status::invalid_argument("missing repo in volume context"));
-        };
-        let commit = if let Some(commit) = value.volume_context.remove(VOLUME_CONTEXT_COMMIT_KEY) {
-            commit
-        } else {
-            return Err(Status::invalid_argument("missing commit in volume context"));
-        };
-        // user and pat are optional
-        let user = value.secrets.remove(SECRETS_USER_KEY).unwrap_or_default();
-        let pat = value.secrets.remove(SECRETS_PAT_KEY).unwrap_or_default();
-
-        Ok(XetCSIVolume {
-            volume_id: value.volume_id,
-            path: String::new(),
             repo,
             commit,
             user,

@@ -1,4 +1,3 @@
-use crate::constants::*;
 use crate::proto::csi::v1::{
     node_server::Node, NodeExpandVolumeRequest, NodeExpandVolumeResponse,
     NodeGetCapabilitiesRequest, NodeGetCapabilitiesResponse, NodeGetInfoRequest,

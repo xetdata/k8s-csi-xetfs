@@ -1,8 +1,8 @@
 use crate::error::K8sCSIXetFSError;
 use crate::error::K8sCSIXetFSError::GenericError;
-use crate::node::volume::XetCSIVolume;
 use tokio::process::Command;
 use tracing::{error, info};
+use crate::driver::volume::XetCSIVolume;
 
 const GIT_XET_BIN: &str = "git-xet";
 const GIT_XET_MOUNT_SUBCOMMAND: &str = "mount";

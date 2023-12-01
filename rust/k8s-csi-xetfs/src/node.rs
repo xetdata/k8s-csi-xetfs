@@ -7,52 +7,40 @@ use crate::proto::csi::v1::{
     NodeStageVolumeResponse, NodeUnpublishVolumeRequest, NodeUnpublishVolumeResponse,
     NodeUnstageVolumeRequest, NodeUnstageVolumeResponse,
 };
-use std::collections::HashMap;
-use tokio::sync::Mutex;
 use tonic::{async_trait, Request, Response, Status};
-use tracing::{info, warn};
-use volume::XetCSIVolume;
-use crate::node::mount::{mount, unmount};
+use tracing::{info};
+use crate::driver::volume::XetCSIVolume;
+use crate::driver::XetHubCSIDriver;
 
-mod mount;
-mod volume;
-
-#[derive(Debug, Default)]
-pub struct XetHubCSIDriver {
+#[derive(Debug)]
+pub struct NodeService {
+    driver: XetHubCSIDriver,
     node_id: String,
-    // map of volume_id to XetCSIVolume
-    // TODO: make this map be backed by file system for resilience
-    volumes: Mutex<HashMap<String, XetCSIVolume>>,
 }
 
-impl XetHubCSIDriver {
+impl NodeService {
     pub fn new(node_id: String) -> Self {
-        XetHubCSIDriver {
+        NodeService {
             node_id,
-            volumes: Mutex::new(HashMap::new()),
+            driver: XetHubCSIDriver::new(),
         }
     }
 }
 
-#[inline]
-fn missing_capability<T: std::fmt::Display>(capability: T) -> Status {
-    Status::failed_precondition(format!("missing capability: {capability}"))
-}
-
 #[async_trait]
-impl Node for XetHubCSIDriver {
+impl Node for NodeService {
     async fn node_stage_volume(
         &self,
         _request: Request<NodeStageVolumeRequest>,
     ) -> Result<Response<NodeStageVolumeResponse>, Status> {
-        Err(missing_capability(CAPABILITY_STAGE_UNSTAGE_VOLUME))
+        missing_capability(CAPABILITY_STAGE_UNSTAGE_VOLUME, Status::failed_precondition)
     }
 
     async fn node_unstage_volume(
         &self,
         _request: Request<NodeUnstageVolumeRequest>,
     ) -> Result<Response<NodeUnstageVolumeResponse>, Status> {
-        Err(missing_capability(CAPABILITY_STAGE_UNSTAGE_VOLUME))
+        missing_capability(CAPABILITY_STAGE_UNSTAGE_VOLUME, Status::failed_precondition)
     }
 
     async fn node_publish_volume(
@@ -61,23 +49,7 @@ impl Node for XetHubCSIDriver {
     ) -> Result<Response<NodePublishVolumeResponse>, Status> {
         info!("got pub request: {request:?}");
         let volume_spec: XetCSIVolume = request.into_inner().try_into()?;
-
-        let mut volumes = self.volumes.lock().await;
-        let volume = volumes.get(&volume_spec.volume_id);
-        if let Some(volume) = volume {
-            if volume_spec == *volume {
-                // repeat request, already published
-                return Ok(Response::new(NodePublishVolumeResponse {}));
-            }
-            // incompatible
-            return Err(Status::already_exists("volume already exists"));
-        }
-        if let Err(e) = mount(&volume_spec).await {
-            warn!("error in mount: {e:?}");
-            return Err(Status::internal(e));
-        }
-        volumes.insert(volume_spec.volume_id.clone(), volume_spec);
-
+        self.driver.publish(volume_spec).await?;
         Ok(Response::new(NodePublishVolumeResponse {}))
     }
 
@@ -86,23 +58,8 @@ impl Node for XetHubCSIDriver {
         request: Request<NodeUnpublishVolumeRequest>,
     ) -> Result<Response<NodeUnpublishVolumeResponse>, Status> {
         let inner = request.into_inner();
-        let path = inner.target_path;
         let volume_id = inner.volume_id;
-
-        let mut volumes = self.volumes.lock().await;
-        let volume = if let Some(volume) = volumes.get(volume_id.as_str()) {
-            volume
-        } else {
-            return Err(Status::not_found(format!("volume with volume id {volume_id} not found")));
-        };
-        if volume.path != path {
-            warn!("paths don't match request {path} got {}", volume.path);
-        }
-        if let Err(e) = unmount(volume.path.clone()).await {
-            return Err(Status::internal(e));
-        }
-        let _ = volumes.remove(volume_id.as_str());
-
+        self.driver.unpublish(volume_id).await?;
         Ok(Response::new(NodeUnpublishVolumeResponse {}))
     }
 
@@ -110,14 +67,14 @@ impl Node for XetHubCSIDriver {
         &self,
         _request: Request<NodeGetVolumeStatsRequest>,
     ) -> Result<Response<NodeGetVolumeStatsResponse>, Status> {
-        Err(missing_capability(CAPABILITY_GET_VOLUME_STATS))
+        missing_capability(CAPABILITY_GET_VOLUME_STATS, Status::failed_precondition)
     }
 
     async fn node_expand_volume(
         &self,
         _request: Request<NodeExpandVolumeRequest>,
     ) -> Result<Response<NodeExpandVolumeResponse>, Status> {
-        Err(Status::invalid_argument("not supported"))
+        missing_capability(CAPABILITY_EXPAND_VOLUME, Status::invalid_argument)
     }
 
     async fn node_get_capabilities(
@@ -140,4 +97,8 @@ impl Node for XetHubCSIDriver {
         };
         Ok(Response::new(node_get_info_response))
     }
+}
+
+fn missing_capability<T>(capability: &str, status: fn(String) -> Status) -> Result<T, Status> {
+    Err(status(format!("missing capability {capability}")))
 }

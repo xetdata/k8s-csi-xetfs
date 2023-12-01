@@ -52,7 +52,7 @@ impl Mounter for GitXetMounter {
 
 
     async fn unmount(&self, path: String) -> Result<(), K8sCSIXetFSError> {
-        let mut cmd = Command::new(crate::driver::mount::UMOUNT_BIN);
+        let mut cmd = Command::new(UMOUNT_BIN);
         cmd.arg(path);
         let exit_status = cmd.spawn()?.wait().await?;
         if !exit_status.success() {

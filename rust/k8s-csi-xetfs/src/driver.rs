@@ -60,10 +60,11 @@ impl XetHubCSIDriver {
     }
 }
 
+#[cfg(test)]
 mod test {
     use std::collections::HashMap;
     use tokio::sync::Mutex;
-    use tonic::{Code, Status};
+    use tonic::Code;
     use crate::driver::mount::{MockMounter, Mounter};
     use crate::driver::volume::{XetCSIVolume};
     use crate::driver::XetHubCSIDriver;
@@ -133,6 +134,78 @@ mod test {
         let result = driver.publish(volume_spec).await;
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err().code(), Code::Internal));
+    }
+
+    #[tokio::test]
+    async fn test_unmount() {
+        let mut mounter = MockMounter::new();
+        mounter.expect_mount().times(1).returning(|_| Ok(()));
+        mounter.expect_unmount().times(1).returning(|_| Ok(()));
+
+        let driver = XetHubCSIDriver::new_for_test(Box::new(mounter));
+        let volume_spec = spec("123", "123", "123", "123");
+        driver.publish(volume_spec.clone()).await.unwrap();
+        let _ = driver.publish(volume_spec.clone()).await;
+        assert!(!driver.volumes.lock().await.is_empty());
+        let result = driver.unpublish(volume_spec.volume_id.clone()).await;
+        assert!(result.is_ok());
+        {
+            let volumes = driver.volumes.lock().await;
+            assert!(volumes.get("123").is_none());
+            assert!(volumes.is_empty())
+        }
+    }
+
+    #[tokio::test]
+    async fn test_unmount_fail() {
+        let mut mounter = MockMounter::new();
+        mounter.expect_mount().times(1).returning(|_| Ok(()));
+        mounter.expect_unmount().times(1).returning(|_| Err(K8sCSIXetFSError::IOError(std::io::Error::new(std::io::ErrorKind::NotFound, ""))));
+
+        let driver = XetHubCSIDriver::new_for_test(Box::new(mounter));
+        let volume_spec = spec("123", "123", "123", "123");
+        driver.publish(volume_spec.clone()).await.unwrap();
+        let _ = driver.publish(volume_spec.clone()).await;
+        assert!(!driver.volumes.lock().await.is_empty());
+        let result = driver.unpublish(volume_spec.volume_id.clone()).await;
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err().code(), Code::Internal));
+        {
+            let volumes = driver.volumes.lock().await;
+            assert!(volumes.get("123").is_some());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_unmount_not_found() {
+        let mounter = MockMounter::new();
+        let driver = XetHubCSIDriver::new_for_test(Box::new(mounter));
+        let result = driver.unpublish("123".to_string()).await;
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err().code(), Code::NotFound));
+    }
+
+    #[tokio::test]
+    async fn test_unmount_twice() {
+        let mut mounter = MockMounter::new();
+        mounter.expect_mount().times(1).returning(|_| Ok(()));
+        mounter.expect_unmount().times(1).returning(|_| Ok(()));
+
+        let driver = XetHubCSIDriver::new_for_test(Box::new(mounter));
+        let volume_spec = spec("123", "123", "123", "123");
+        driver.publish(volume_spec.clone()).await.unwrap();
+        let _ = driver.publish(volume_spec.clone()).await;
+        assert!(!driver.volumes.lock().await.is_empty());
+        let result = driver.unpublish(volume_spec.volume_id.clone()).await;
+        assert!(result.is_ok());
+        {
+            let volumes = driver.volumes.lock().await;
+            assert!(volumes.get("123").is_none());
+            assert!(volumes.is_empty())
+        }
+        let result = driver.unpublish(volume_spec.volume_id.clone()).await;
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err().code(), Code::NotFound));
     }
 
 }

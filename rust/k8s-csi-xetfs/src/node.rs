@@ -11,6 +11,7 @@ use tonic::{async_trait, Request, Response, Status};
 use tracing::{info};
 use crate::driver::volume::XetCSIVolume;
 use crate::driver::XetHubCSIDriver;
+use crate::proto::csi::v1::node_service_capability::rpc::Type;
 
 #[derive(Debug)]
 pub struct NodeService {
@@ -27,27 +28,30 @@ impl NodeService {
     }
 }
 
+/// implementation of the gRPC Node service.
+/// errors returned from unimplemented stubs are as specified in the CSI Spec.
+/// https://github.com/container-storage-interface/spec/blob/master/spec.md#node-service-rpc
 #[async_trait]
 impl Node for NodeService {
     async fn node_stage_volume(
         &self,
         _request: Request<NodeStageVolumeRequest>,
     ) -> Result<Response<NodeStageVolumeResponse>, Status> {
-        missing_capability(CAPABILITY_STAGE_UNSTAGE_VOLUME, Status::failed_precondition)
+        missing_capability(Type::StageUnstageVolume, Status::failed_precondition)
     }
 
     async fn node_unstage_volume(
         &self,
         _request: Request<NodeUnstageVolumeRequest>,
     ) -> Result<Response<NodeUnstageVolumeResponse>, Status> {
-        missing_capability(CAPABILITY_STAGE_UNSTAGE_VOLUME, Status::failed_precondition)
+        missing_capability(Type::StageUnstageVolume, Status::failed_precondition)
     }
 
     async fn node_publish_volume(
         &self,
         request: Request<NodePublishVolumeRequest>,
     ) -> Result<Response<NodePublishVolumeResponse>, Status> {
-        info!("got pub request: {request:?}");
+        info!("got publish request: {request:?}");
         let volume_spec: XetCSIVolume = request.into_inner().try_into()?;
         self.driver.publish(volume_spec).await?;
         Ok(Response::new(NodePublishVolumeResponse {}))
@@ -57,6 +61,7 @@ impl Node for NodeService {
         &self,
         request: Request<NodeUnpublishVolumeRequest>,
     ) -> Result<Response<NodeUnpublishVolumeResponse>, Status> {
+        info!("got unpublish request: {request:?}");
         let inner = request.into_inner();
         let volume_id = inner.volume_id;
         self.driver.unpublish(volume_id).await?;
@@ -67,14 +72,14 @@ impl Node for NodeService {
         &self,
         _request: Request<NodeGetVolumeStatsRequest>,
     ) -> Result<Response<NodeGetVolumeStatsResponse>, Status> {
-        missing_capability(CAPABILITY_GET_VOLUME_STATS, Status::failed_precondition)
+        missing_capability(Type::GetVolumeStats, Status::failed_precondition)
     }
 
     async fn node_expand_volume(
         &self,
         _request: Request<NodeExpandVolumeRequest>,
     ) -> Result<Response<NodeExpandVolumeResponse>, Status> {
-        missing_capability(CAPABILITY_EXPAND_VOLUME, Status::invalid_argument)
+        missing_capability(Type::ExpandVolume, Status::invalid_argument)
     }
 
     async fn node_get_capabilities(
@@ -99,6 +104,6 @@ impl Node for NodeService {
     }
 }
 
-fn missing_capability<T>(capability: &str, status: fn(String) -> Status) -> Result<T, Status> {
-    Err(status(format!("missing capability {capability}")))
+fn missing_capability<T>(capability: Type, status: fn(String) -> Status) -> Result<T, Status> {
+    Err(status(format!("missing capability {}", capability.as_str_name())))
 }

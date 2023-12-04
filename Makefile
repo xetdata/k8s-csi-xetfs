@@ -8,7 +8,7 @@ build-rust: rust
 build-plugin: build-rust
 	docker build -f builder/Dockerfile -t xet-csi-plugin:latest builder
 
-build-counter-app: example example
+build-counter-app: example
 	docker build -f example/Dockerfile.app -t counter-app:latest example
 
 run: build-plugin build-counter-app

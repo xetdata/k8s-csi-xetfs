@@ -1,5 +1,5 @@
 # k8s-csi-xetfs
-Kubernetes Container Storage Interface Plugin for XetHub. This plugin enables mounting and accessing XetHub repo from Kubernetes by implementing [CSI specification](https://github.com/container-storage-interface/spec/blob/master/spec.md)
+Kubernetes Container Storage Interface Plugin for XetHub. This plugin enables mounting and accessing XetHub repository from Kubernetes by implementing [CSI specification](https://github.com/container-storage-interface/spec/blob/master/spec.md)
 
 ### csi plugin name: `csi.xethub.xetdata.com`
 
@@ -16,7 +16,7 @@ Since this plugin is in alpha version, it supports minimal set of features provi
 - Only supports [CSI ephemeral storage](https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/#csi-ephemeral-volumes)
 
 ## Example usage
-Below is an example pod spec that mounts main branch of `Flickr30k` [repo](https://xethub.com/XetHub/Flickr30k) under `/data` directory. See [apps.yaml](./example/apps.yaml) for more details.
+Below is an example pod spec that mounts main branch of `Flickr30k` [repository](https://xethub.com/XetHub/Flickr30k) under `/data` directory. See [apps.yaml](./example/apps.yaml) for more details.
 
 ```yaml
 apiVersion: v1
@@ -42,11 +42,11 @@ spec:
 ```
 
 ## Driver Parameters
-| Name                      | Meaning                                                                                                                                            | Example                                 | Mandatory | Default value |
-|---------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------|-----------|---------------|
-| volumeAttributes.repo     | URL to the repository to mount                                                                                                                     | https://xethub.com/XetHub/Flickr30k.git | Yes       |               |
-| volumeAttributes.commit   | Commit SHA or branch name to mount from the repo                                                                                                   | main                                    | Yes       |               |
-| nodePublishSecretRef.name | Secret name that stores `user` and `pat` value for mounting private repo (See [secret.yaml.template](deploy/secret.yaml.template) for more details | existing Kubernetes secret name         | No        |               |
+| Name                      | Meaning                                                                                                                                                  | Example                                 | Mandatory                                  | Default value |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------|--------------------------------------------|---------------|
+| volumeAttributes.repo     | URL to the repository to mount                                                                                                                           | https://xethub.com/XetHub/Flickr30k.git | Yes                                        |               |
+| volumeAttributes.commit   | Commit SHA or branch name to mount from the repository                                                                                                   | main                                    | Yes                                        |               |
+| nodePublishSecretRef.name | Secret name that stores `user` and `pat` value for mounting private repository (See [secret.yaml.template](deploy/secret.yaml.template) for more details | existing Kubernetes secret name         | No (yes for mounting private repositories) |               |
 
 ## Install driver on a Kubernetes cluster via kubectl
 ### Option 1: remote install

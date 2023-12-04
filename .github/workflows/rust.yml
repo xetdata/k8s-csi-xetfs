@@ -16,6 +16,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - uses: arduino/setup-protoc@v2
+      with:
+        version: "23.1"
+        repo-token: ${{ secrets.DEV_GITHUB_TOKEN }}
     - name: Lint
       run: cd rust/k8s-csi-xetfs && cargo clippy -r -- -D warnings
     - name: Build

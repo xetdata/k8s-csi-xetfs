@@ -6,8 +6,7 @@ metadata:
 spec:
   containers:
     - name: app1
-      image: counter-app:latest
-      imagePullPolicy: Never
+      image: docker.io/xethub/counter-app:latest
       volumeMounts:
         - name: xet-flickr-30
           mountPath: /data
@@ -30,4 +29,3 @@ spec:
           #commit: main
         #nodePublishSecretRef:
           #name: <secret name>
-

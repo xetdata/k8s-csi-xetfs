@@ -35,8 +35,7 @@ spec:
         - name: xet-plugin
           securityContext:
             privileged: true
-          image: xet-csi-plugin:latest
-          imagePullPolicy: Never
+          image: docker.io/xethub/k8s-csi-xetfs:latest
           args:
             - --endpoint=$(CSI_ENDPOINT)
             - --node-id=$(KUBE_NODE_NAME)

@@ -8,8 +8,8 @@ build-rust: rust
 build-plugin: build-rust
 	docker build -f builder/Dockerfile -t xet-csi-plugin:latest builder
 
-build-counter-app: deploy/example/app.py deploy/example/Dockerfile.app
-	docker build -f deploy/example/Dockerfile.app -t counter-app:latest deploy/example
+build-counter-app: example
+	docker build -f example/Dockerfile.app -t counter-app:latest example
 
 run: build-plugin build-counter-app
 	minikube image load xet-csi-plugin:latest
@@ -19,7 +19,7 @@ run: build-plugin build-counter-app
 	kubectl apply -f deploy/csidriver.yaml
 	kubectl apply -f deploy/node-serviceaccount.yaml
 	kubectl apply -f deploy/node-daemonset.yaml
-	kubectl apply -f deploy/example/apps.yaml
+	kubectl apply -f example/apps.yaml
 
 clean:
 	kubectl delete --all --force pods

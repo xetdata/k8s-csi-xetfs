@@ -16,7 +16,7 @@ Since this plugin is in alpha version, it supports minimal set of features provi
 - Only supports [CSI ephemeral storage](https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/#csi-ephemeral-volumes)
 
 ## Example usage
-This repo contains an example python application under [example](./example) directory that uses XetHub CSI driver to mount `Flickr30k` [repository](https://xethub.com/XetHub/Flickr30k), reads all the files and prints out the total size of the repo. Start the example application by running the following commands:
+This repository contains an example python application under [example](./example) directory that uses XetHub CSI driver to mount `Flickr30k` [repository](https://xethub.com/XetHub/Flickr30k), reads all the files and prints out the total size of the repository. Start the example application by running the following commands:
 
 ```bash
 kubectl apply -f - <<EOF

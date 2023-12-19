@@ -64,7 +64,7 @@ EOF
 ## Install driver on a Kubernetes cluster via kubectl
 ### Option 1: remote install
 ```bash
-curl -skSL https://raw.githubusercontent.com/xetdata/k8s-csi-xetfs/master/deploy/install-driver.sh | bash -s main --
+curl -skSL https://raw.githubusercontent.com/xetdata/k8s-csi-xetfs/main/deploy/install-driver.sh | bash -s main --
 ```
 
 ### Option 2: local install
@@ -88,7 +88,7 @@ cd k8s-csi-xetfs
 ## Uninstall driver on a Kubernetes cluster
 ### Option 1: remote uninstall
 ```bash
-curl -skSL https://raw.githubusercontent.com/xetdata/k8s-csi-xetfs/master/deploy/uninstall-driver.sh | bash -s main --
+curl -skSL https://raw.githubusercontent.com/xetdata/k8s-csi-xetfs/main/deploy/uninstall-driver.sh | bash -s main --
 ```
 
 ### Option 2: local uninstall

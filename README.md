@@ -16,9 +16,11 @@ Since this plugin is in alpha version, it supports minimal set of features provi
 - Only supports [CSI ephemeral storage](https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/#csi-ephemeral-volumes)
 
 ## Example usage
-Below is an example pod spec that mounts main branch of `Flickr30k` [repository](https://xethub.com/XetHub/Flickr30k) under `/data` directory. See [apps.yaml](./example/apps.yaml) for more details.
+This repository contains an example python application under [example](./example) directory that uses XetHub CSI driver to mount `Flickr30k` [repository](https://xethub.com/XetHub/Flickr30k), reads all the files and prints out the total size of the repository. Start the example application by running the following commands:
 
-```yaml
+```bash
+kubectl apply -f - <<EOF
+---
 apiVersion: v1
 kind: Pod
 metadata:
@@ -26,8 +28,7 @@ metadata:
 spec:
   containers:
     - name: app1
-      image: counter-app:latest
-      imagePullPolicy: Never
+      image: docker.io/xethub/counter-app:latest
       volumeMounts:
         - name: xet-flickr-30
           mountPath: /data
@@ -39,6 +40,18 @@ spec:
         volumeAttributes:
           repo: https://xethub.com/XetHub/Flickr30k.git
           commit: main
+          # following is setup for a private repo mount
+          # requires a secret configured like in secret.yaml.template
+          #- name: private-repo
+          #csi:
+          #driver: csi.xethub.xetdata.com
+          #readOnly: true
+          #volumeAttributes:
+          #repo: <https url of private repo>
+          #commit: main
+          #nodePublishSecretRef:
+          #name: <secret name>
+EOF
 ```
 
 ## Driver Parameters

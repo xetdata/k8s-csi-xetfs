@@ -1,0 +1,28 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: arduino/setup-protoc@v2
+      with:
+        version: "23.1"
+        repo-token: ${{ secrets.DEV_GITHUB_TOKEN }}
+    - name: Lint
+      run: cd rust/k8s-csi-xetfs && cargo clippy -r -- -D warnings
+    - name: Build
+      run: cd rust/k8s-csi-xetfs && cargo build --release --verbose
+    - name: Run tests
+      run: cd rust/k8s-csi-xetfs && cargo test --verbose

@@ -13,10 +13,12 @@ pub(crate) struct XetCSIVolume {
     pub(crate) user: String,
     #[redact]
     pub(crate) pat: String,
+    pub(crate) cas: Option<String>,
 }
 
 const VOLUME_CONTEXT_REPO_KEY: &str = "repo";
 const VOLUME_CONTEXT_COMMIT_KEY: &str = "commit";
+const VOLUME_CONTEXT_CAS_KEY: &str = "cas";
 const SECRETS_USER_KEY: &str = "user";
 const SECRETS_PAT_KEY: &str = "pat";
 
@@ -44,6 +46,9 @@ impl TryFrom<NodePublishVolumeRequest> for XetCSIVolume {
         let user = value.secrets.remove(SECRETS_USER_KEY).unwrap_or_default();
         let pat = value.secrets.remove(SECRETS_PAT_KEY).unwrap_or_default();
 
+        // cas is optional and stored as option
+        let cas = value.volume_context.remove(VOLUME_CONTEXT_CAS_KEY);
+
         Ok(XetCSIVolume {
             volume_id: value.volume_id,
             path: value.target_path,
@@ -51,6 +56,7 @@ impl TryFrom<NodePublishVolumeRequest> for XetCSIVolume {
             commit,
             user,
             pat,
+            cas,
         })
     }
 }

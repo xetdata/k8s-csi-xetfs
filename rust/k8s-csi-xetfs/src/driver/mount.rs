@@ -36,13 +36,14 @@ impl Mounter for GitXetMounter {
         ];
         info!("mount, running {GIT_XET_BIN} with args: {args:?}");
         cmd.args(args);
+        cmd.env("XET_LOG_LEVEL", "info");
         if !volume_spec.user.is_empty() && !volume_spec.pat.is_empty() {
             info!("setting user name and token env vars in mount command");
-            cmd.envs([
-                ("XET_LOG_LEVEL", "info"),
-                (GIT_XET_ENV_VAR_USER_NAME, volume_spec.user.as_str()),
-                (GIT_XET_ENV_VAR_USER_TOKEN, volume_spec.pat.as_str()),
-            ]);
+            cmd.env(GIT_XET_ENV_VAR_USER_NAME, volume_spec.user.as_str());
+            cmd.env(GIT_XET_ENV_VAR_USER_TOKEN, volume_spec.pat.as_str());
+        }
+        if let Some(cas) = &volume_spec.cas {
+            cmd.env("XET_CAS_SERVER", cas.as_str());
         }
 
         cmd.spawn()?.wait().await?;

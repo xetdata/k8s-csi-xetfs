@@ -1,4 +1,11 @@
-# k8s-csi-xetfs
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
+# [DEPRECATED] k8s-csi-xetfs
+
+**_XetHub has joined [Hugging Face 🤗](https://huggingface.co/blog/xethub-joins-hf). Follow our work to improve large scale collaboration on [Hugging Face Hub](https://huggingface.co/xet-team)._**
+
+----
+
 Kubernetes Container Storage Interface Plugin for XetHub. This plugin enables mounting and accessing XetHub repository from Kubernetes by implementing [CSI specification](https://github.com/container-storage-interface/spec/blob/master/spec.md)
 
 ### csi plugin name: `csi.xethub.xetdata.com`
